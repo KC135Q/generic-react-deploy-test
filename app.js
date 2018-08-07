@@ -1,10 +1,8 @@
-var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-
-var usersRouter = require('./routes/users');
+const generatePassword = require('password-generator')
 
 var app = express();
 
@@ -14,23 +12,25 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'client/build')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+// Put all API endpoints under '/api'
+app.get('/api/passwords', (req, res) => {
+  const count = 5;
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
-});
+  // Generate some passwords
+  const passwords = Array.from(Array(count).keys()).map(i =>
+    generatePassword(12, false)
+  )
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+  // Return them as json
+  res.json(passwords);
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+  console.log(`Sent ${count} passwords`);
+})
+
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname+'/client/build/index.html'));
 });
 
 module.exports = app;
